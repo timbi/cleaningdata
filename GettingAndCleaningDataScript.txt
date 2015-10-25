@@ -1,0 +1,92 @@
+# This is the script for the project for the Coursera Signature Track Getting and Cleaning Data course by Jeff Leek, PhD, Roger D. Peng, PhD, Brian Caffo, PhD
+#  1.Merges the training and the test sets to create one data set.
+#  2.Extracts only the measurements on the mean and standard deviation for each measurement. 
+#  3.Uses descriptive activity names to name the activities in the data set
+#  4.Appropriately labels the data set with descriptive variable names. 
+
+5.From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject
+
+
+
+# Step 1: Merge the training and the test sets to create one data set
+
+# Read in the test files
+xtest <- read.csv(file= "C:/Learn/coursera/CleaningData/getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/test/X_test.txt", header=FALSE, sep="")
+dim(xtest)
+head(xtest)
+
+ytest <- read.csv(file= "C:/Learn/coursera/CleaningData/getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/test/y_test.txt", header=FALSE)
+dim(ytest)
+head(ytest)
+
+subjecttest <- read.csv(file= "C:/Learn/coursera/CleaningData/getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/test/subject_test.txt", header=FALSE, sep="")
+dim(subjecttest)
+head(subjecttest)
+
+# Read in the train files
+xtrain <- read.csv(file= "C:/Learn/coursera/CleaningData/getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/train/X_train.txt", header=FALSE, sep="")
+dim(xtrain)
+head(xtrain)
+
+ytrain <- read.csv(file= "C:/Learn/coursera/CleaningData/getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/train/y_train.txt", header=FALSE)
+dim(ytrain)
+head(ytrain)
+
+subjecttrain <- read.csv(file= "C:/Learn/coursera/CleaningData/getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/train/subject_train.txt", header=FALSE, sep="")
+dim(subjecttrain)
+head(subjecttrain)
+
+features <- read.csv(file= "C:/Learn/coursera/CleaningData/getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/features.txt", header=FALSE, sep="")
+dim(features)
+head(features)
+
+# Get the column of variable labels
+head(features[c("V2")])
+
+# Combine the data sets
+
+xytest <- cbind(subjecttest, ytest, xtest)
+xytrain <- cbind(subjecttrain, ytrain, xtrain)
+xytesttrain <- rbind(xytest, xytrain)
+dim(xytesttrain)
+
+# Transpose rows to columns and add names to the added columns
+cfeatures <-t(features[c("V2")])
+ccfeatures <- cbind("Subject", "Activity", cfeatures)
+
+# Add names to the variables in xytesttrain
+names(xytesttrain) <- ccfeatures
+
+# Step 2: Extract only the measurements on the mean and standard deviation for each measurement.
+
+library(data.table)
+xystdmean <- xytesttrain[c(names(xytesttrain)=="Activity" | names(xytesttrain)=="Subject" | names(xytesttrain) %like% "mean[()]")| (names(xytesttrain) %like% "std[()]")]
+
+
+# Step 3: Use descriptive activity names to name the activities in the data set
+
+xystdmean[which(xystdmean$Activity==1), "Activity"] <- "WALKNG"
+xystdmean[which(xystdmean$Activity==2), "Activity"] <- "WALKING_UPSTAIRS"
+xystdmean[which(xystdmean$Activity==3), "Activity"] <- "WALKING_DOWNSTAIRS"
+xystdmean[which(xystdmean$Activity==4), "Activity"] <- "SITTING"
+xystdmean[which(xystdmean$Activity==5), "Activity"] <- "STANDING"
+xystdmean[which(xystdmean$Activity==6), "Activity"] <- "LAYING"
+head(xystdmean[,2])
+
+# Step 4: Appropriately labels the data set with descriptive variable names
+# This was actually already done in step 1
+
+# Transpose rows to columns and add new column names
+# cfeatures <-t(features[c("V2")])
+# ccfeatures <- cbind("Subject", "Activity", cfeatures)
+#
+# Give column names to xytesttrain
+# names(xytesttrain) <- ccfeatures
+
+# Step 5: From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject
+# Avg of every column, grouped by (activity, subject) or (subject, activity, variable)
+
+library(plyr)
+library(reshape2)
+xystdmean_avg <- data.frame(xystdmean %>% group_by(Subject, Activity) %>% summarize_each(funs(mean)))
+xystdmean_avg
